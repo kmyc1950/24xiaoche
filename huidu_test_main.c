@@ -7,6 +7,7 @@
 #include "oled.h"
 #include "huidu.h"
 #include <stdio.h>
+#include <string.h>
 
 /**
  * @brief 主函数 - 灰度传感器测试示例
@@ -29,6 +30,8 @@
  *    - 小车偏左（黑线在右）：误差为正（0 ~ +3.5）
  *    - 完全丢线：显示 "LOST"，误差保持上一次的值
  */
+ // 定义全局运行模式变量，防止 motor.c 编译报错
+int run_mode = 0;
 int main(void)
 {
     // ===== 系统初始化 =====

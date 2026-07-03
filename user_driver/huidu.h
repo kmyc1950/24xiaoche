@@ -77,4 +77,30 @@ float Huidu_Get_Last_Error(void);
  */
 uint8_t Huidu_Is_Lost(void);
 
+/**
+ * @brief 自动巡线控制任务（基于位置式PD算法）
+ *
+ * 功能：
+ * - 读取灰度传感器误差
+ * - 使用PD算法计算转向控制量
+ * - 更新左右轮目标速度实现差速转向
+ *
+ * 使用方法：
+ * 在主循环中以一定周期（如10ms~50ms）调用此函数
+ *
+ * 注意：
+ * - 调用前需确保电机PI控制已启动（TIMA0定时器中断）
+ * - 调用前需确保左右轮电机已初始化
+ */
+void Huidu_LineFollow_Task(void);
+
+/**
+ * @brief 停止巡线（停止电机）
+ *
+ * 功能：
+ * - 将左右轮目标速度设为0
+ * - 重置PD控制器状态
+ */
+void Huidu_LineFollow_Stop(void);
+
 #endif // HUIDU_H
