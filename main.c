@@ -1,33 +1,6 @@
 /*
  * Copyright (c) 2021, Texas Instruments Incorporated
  * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * *  Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * *  Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * *  Neither the name of Texas Instruments Incorporated nor the names of
- *    its contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "ti_msp_dl_config.h"
@@ -37,145 +10,202 @@
 #include "uart.h"
 #include "key.h"
 #include "motor.h"
+#include "huidu.h"
 
 int status = 0;
-int run_mode = 0;  // 运行模式：0=停止, 1=直行, 2=直行+左转, 3=直行+右转, 4=保留
+int run_mode = 0;  // 运行模式：0=停止, 1=巡线, 2=直行测试, 3=转弯测试, 4=调试
 
 int main(void)
 {
+    // ===== 系统初始化 =====
     SYSCFG_DL_init();
-    OLED_Init();
-    OLED_ColorTurn(0);//0正常显示，1 反色显示
-    OLED_DisplayTurn(0);//0正常显示 1 屏幕翻转显示
-    OLED_Clear();
-    // NVIC_EnableIRQ(PRINT_INST_INT_IRQN);
 
-    // 使能GPIOA中断（按键KEY1和左电机编码器AA共享此中断）
-    NVIC_EnableIRQ(DC_MOTOR_INT_IRQN);  // 等价于 GPIOA_INT_IRQn
-    NVIC_EnableIRQ(KEY_INT_IRQN);
-    DL_Timer_setCaptureCompareValue(SERVO_INST, 50, GPIO_SERVO_C1_IDX);
-    DL_Timer_startCounter(SERVO_INST);
+    // ===== OLED 初始化 =====
+    OLED_Init();
+    OLED_ColorTurn(0);      // 0=正常显示，1=反色显示
+    OLED_DisplayTurn(0);    // 0=正常显示，1=屏幕翻转显示
+    OLED_Clear();
+
+    // 显示启动信息
+    OLED_ShowString(0, 0, (u8 *)"Line Follow Car", 16);
+    OLED_ShowString(0, 16, (u8 *)"Press KEY1", 16);
+    OLED_ShowString(0, 32, (u8 *)"to switch mode", 16);
+    OLED_Refresh();
+    delay_ms(2000);
+    OLED_Clear();
+
+    // ===== 使能中断 =====
+    NVIC_EnableIRQ(DC_MOTOR_INT_IRQN);   // GPIO中断（编码器）
+    NVIC_EnableIRQ(KEY_INT_IRQN);        // 按键中断
 
     // ===== 双轮电机初始化 =====
     motor_init(1);  // 初始化左轮
     motor_init(2);  // 初始化右轮
 
-    // 启动PID定时器（50ms周期，自动执行PI闭环控制）
+    // ===== 启动PID定时器（10ms周期，自动执行PI闭环控制）=====
     DL_Timer_startCounter(MOTOR_PID_INST);
     NVIC_EnableIRQ(MOTOR_PID_INST_INT_IRQN);
 
-    // ===== 设置双轮目标速度 =====
-    // 目标速度单位：mm/s
-    Motor_Left.target_speed = 30.0f;   // 左轮目标速度 300mm/s
-    Motor_Right.target_speed = 30.0f;  // 右轮目标速度 300mm/s
-    
-    // ========== 主循环：根据模式执行不同的控制逻辑 ==========
+    // ===== 初始速度设为0（停止状态）=====
+    Motor_Left.target_speed = 0.0f;
+    Motor_Right.target_speed = 0.0f;
+
+    // ===== 主循环：根据模式执行不同的控制逻辑 =====
+    while (1) {
         switch(run_mode) {
-            case 1:  // 模式1：直行测试
-                motor_set_direction(1, 1);
-                motor_set_direction(2, 1);
-                delay_ms(3000);  // 直行 3 秒
-                // 停止
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                break;
+            // ========== 模式0：停止 ==========
+            case 0:
+            {
+                // 停止所有电机
+                Motor_Left.target_speed = 0.0f;
+                Motor_Right.target_speed = 0.0f;
 
-            case 2:  // 模式2：直行 + 左转
-                // 直行
-                motor_set_direction(1, 1);
-                motor_set_direction(2, 1);
-                delay_ms(2000);
-                // 左转（左轮停，右轮前进）
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 1);
-                delay_ms(1000);
-                // 停止
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                break;
+                // OLED 显示
+                char oled_str[64];
+                OLED_ShowString(0, 0, (u8 *)"Mode 0: STOP", 16);
+                OLED_ShowString(0, 16, (u8 *)"Press KEY1", 16);
+                OLED_ShowString(0, 32, (u8 *)"to switch", 16);
 
-            case 3:  // 模式3：直行 + 右转
-                // 直行
-                motor_set_direction(1, 1);
-                motor_set_direction(2, 1);
-                delay_ms(2000);
-                // 右转（右轮停，左轮前进）
-                motor_set_direction(1, 1);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                // 停止
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                break;
+                sprintf(oled_str, "L:%.0f R:%.0f",
+                        Motor_Left.current_speed,
+                        Motor_Right.current_speed);
+                OLED_ShowString(0, 48, (u8 *)oled_str, 16);
 
-            case 4:  // 模式4：暂待使用，保持静止
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                break;
+                OLED_Refresh();
+                delay_ms(100);
+            }
+            break;
 
+            // ========== 模式1：自动巡线 ==========
+            case 1:
+            {
+                // 调用巡线控制函数
+                Huidu_LineFollow_Task();
+
+                // 读取当前状态用于OLED显示
+                uint8_t sensor_raw = Huidu_Read_Raw();
+                float error = Huidu_Get_Last_Error();
+                uint8_t is_lost = Huidu_Is_Lost();
+
+                // OLED 显示
+                char oled_str[64];
+
+                // 第1行：模式和传感器状态
+                sprintf(oled_str, "M1:LINE 0x%02X", sensor_raw);
+                OLED_ShowString(0, 0, (u8 *)oled_str, 16);
+
+                // 第2行：位置误差
+                sprintf(oled_str, "Err:%+.1f %s", error, is_lost ? "LOST" : "OK");
+                OLED_ShowString(0, 16, (u8 *)oled_str, 16);
+
+                // 第3行：左轮目标速度
+                sprintf(oled_str, "L:%.0f mm/s", Motor_Left.target_speed);
+                OLED_ShowString(0, 32, (u8 *)oled_str, 16);
+
+                // 第4行：右轮目标速度
+                sprintf(oled_str, "R:%.0f mm/s", Motor_Right.target_speed);
+                OLED_ShowString(0, 48, (u8 *)oled_str, 16);
+
+                OLED_Refresh();
+
+                // 延时10ms后继续下一次巡线控制
+                delay_ms(10);
+            }
+            break;
+
+            // ========== 模式2：直行测试 ==========
+            case 2:
+            {
+                // 固定速度直行（测试电机和编码器）
+                Motor_Left.target_speed = 300.0f;
+                Motor_Right.target_speed = 300.0f;
+
+                // OLED 显示
+                char oled_str[64];
+                OLED_ShowString(0, 0, (u8 *)"M2:STRAIGHT", 16);
+
+                sprintf(oled_str, "L:%.1f mm/s", Motor_Left.current_speed);
+                OLED_ShowString(0, 16, (u8 *)oled_str, 16);
+
+                sprintf(oled_str, "R:%.1f mm/s", Motor_Right.current_speed);
+                OLED_ShowString(0, 32, (u8 *)oled_str, 16);
+
+                sprintf(oled_str, "LC:%d RC:%d", encoder_counter_left, encoder_counter_right);
+                OLED_ShowString(0, 48, (u8 *)oled_str, 16);
+
+                OLED_Refresh();
+                delay_ms(100);
+            }
+            break;
+
+            // ========== 模式3：转弯测试 ==========
+            case 3:
+            {
+                // 左转测试：左轮慢，右轮快
+                Motor_Left.target_speed = 200.0f;
+                Motor_Right.target_speed = 400.0f;
+
+                // OLED 显示
+                char oled_str[64];
+                OLED_ShowString(0, 0, (u8 *)"M3:TURN TEST", 16);
+
+                sprintf(oled_str, "LT:%.0f->%.0f",
+                        Motor_Left.target_speed,
+                        Motor_Left.current_speed);
+                OLED_ShowString(0, 16, (u8 *)oled_str, 16);
+
+                sprintf(oled_str, "RT:%.0f->%.0f",
+                        Motor_Right.target_speed,
+                        Motor_Right.current_speed);
+                OLED_ShowString(0, 32, (u8 *)oled_str, 16);
+
+                OLED_Refresh();
+                delay_ms(100);
+            }
+            break;
+
+            // ========== 模式4：调试模式（显示传感器原始数据）==========
+            case 4:
+            {
+                // 停止电机
+                Motor_Left.target_speed = 0.0f;
+                Motor_Right.target_speed = 0.0f;
+
+                // 读取灰度传感器原始数据
+                uint8_t sensor_raw = Huidu_Read_Raw();
+                float error = Huidu_Get_Error();
+
+                char oled_str[64];
+                OLED_ShowString(0, 0, (u8 *)"M4:DEBUG", 16);
+
+                // 二进制显示
+                sprintf(oled_str, "Bin:");
+                for (int8_t i = 7; i >= 0; i--) {
+                    strcat(oled_str, (sensor_raw & (1 << i)) ? "1" : "0");
+                }
+                OLED_ShowString(0, 16, (u8 *)oled_str, 16);
+
+                // 十六进制显示
+                sprintf(oled_str, "Hex:0x%02X", sensor_raw);
+                OLED_ShowString(0, 32, (u8 *)oled_str, 16);
+
+                // 误差显示
+                sprintf(oled_str, "Err:%+.1f", error);
+                OLED_ShowString(0, 48, (u8 *)oled_str, 16);
+
+                OLED_Refresh();
+                delay_ms(100);
+            }
+            break;
+
+            // ========== 异常情况：停止 ==========
             default:
-                // 异常情况，停止
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                break;
+            {
+                Motor_Left.target_speed = 0.0f;
+                Motor_Right.target_speed = 0.0f;
+                run_mode = 0;  // 重置为停止模式
+            }
+            break;
         }
-        
-        
-        
-        // // 通知ADC开始采样
-        // DL_ADC12_startConversion(xuanniu_INST);
-
-        // //等Adc采样完
-        // delay_ms(10);
-
-        // // 获取ADC采样结果
-        // uint16_t adc_result = DL_ADC12_getMemResult(xuanniu_INST, xuanniu_ADCMEM_0);
-        // float_t adc_value = adc_result * xuanniu_ADCMEM_0_REF_VOLTAGE_V / 4096.0; // Assuming 12-bit ADC resolution
-        
-        // char oled_str[50];
-        // sprintf(oled_str, "ADC: %.2f V", adc_value);
-        // OLED_ShowString(0, 32, (u8 *)oled_str, 16);
-        // OLED_Refresh();
-        
-
-        // if(status == 0){
-        //     OLED_Clear();
-        //     OLED_ShowString(0, 0, (u8 *)"status: 0", 16);
-        //     OLED_Refresh();
-        // } 
-        // else if(status == 1){
-        //     OLED_Clear();
-        //     OLED_ShowString(0, 0, (u8 *)"status: 1", 16);
-        //     OLED_Refresh();
-        // }
-        // else if(status == 2){
-        //     OLED_Clear();
-        //     OLED_ShowString(0, 0, (u8 *)"status: 2", 16);
-        //     OLED_Refresh();
-        // }
-        
-
-        // Toggle the LED every 500 ms
-        // char oled_str[50];
-        // int int_a = 20;
-        // sprintf(oled_str, "Integer: %d", int_a);
-        // OLED_ShowString(0, 46, (u8 *)oled_str, 16);
-        // OLED_Refresh();
-        
-
-        // OLED_ShowString(0, 0, (u8 *)"Hello, TI!", 16);
-        // OLED_Refresh();
-        // delay_ms(500);
-        // DL_GPIO_clearPins(LED_PORT, LED_LED0_PIN);
-        // DL_GPIO_clearPins(LED_PORT, LED_LED1_PIN);
-        // delay_ms(500);
-        // DL_GPIO_setPins(LED_PORT, LED_LED0_PIN);
-        // DL_GPIO_setPins(LED_PORT, LED_LED1_PIN);
-        // UART_send_string(PRINT_INST, "hello, ti!\n");
     }
 }
