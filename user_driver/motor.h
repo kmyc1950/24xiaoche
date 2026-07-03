@@ -17,10 +17,10 @@
 #define WHEEL_DIAMETER_MM       65.0f       // 车轮直径 mm
 #define WHEEL_CIRCUMFERENCE_MM  (PI * WHEEL_DIAMETER_MM)  // 车轮周长 mm
 
-// 采样周期（根据PID定时器配置：50ms）
-#define PID_SAMPLE_TIME_MS      50.0f       // 采样周期 ms
-#define PID_SAMPLE_TIME_S       (PID_SAMPLE_TIME_MS / 1000.0f)  // 采样周期 s
-#define PID_SAMPLE_FREQ_HZ      (1.0f / PID_SAMPLE_TIME_S)       // 采样频率 Hz = 20Hz
+// 采样周期（根据PID定时器配置：10ms）
+#define PID_SAMPLE_TIME_MS      10.0f       // 采样周期 ms
+#define PID_SAMPLE_TIME_S       (PID_SAMPLE_TIME_MS / 1000.0f)  // 采样周期 s = 0.01s
+#define PID_SAMPLE_FREQ_HZ      (1.0f / PID_SAMPLE_TIME_S)       // 采样频率 Hz = 100Hz
 
 // PWM参数（根据ti_msp_dl_config.c中的PWM配置）
 #define PWM_PERIOD              4000        // PWM周期（最大占空比值）

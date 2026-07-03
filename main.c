@@ -70,85 +70,60 @@ int main(void)
     Motor_Right.target_speed = 30.0f;  // 右轮目标速度 300mm/s
     
     // ========== 主循环：根据模式执行不同的控制逻辑 ==========
-    while (1) {
-        // ===== OLED 显示双轮速度和编码器计数 =====
-        char oled_str[64];
+        switch(run_mode) {
+            case 1:  // 模式1：直行测试
+                motor_set_direction(1, 1);
+                motor_set_direction(2, 1);
+                delay_ms(3000);  // 直行 3 秒
+                // 停止
+                motor_set_direction(1, 0);
+                motor_set_direction(2, 0);
+                delay_ms(1000);
+                break;
 
-        // 显示左轮速度
-        sprintf(oled_str, "L:%.1f mm/s", Motor_Left.current_speed);
-        OLED_ShowString(0, 0, (u8 *)oled_str, 16);
+            case 2:  // 模式2：直行 + 左转
+                // 直行
+                motor_set_direction(1, 1);
+                motor_set_direction(2, 1);
+                delay_ms(2000);
+                // 左转（左轮停，右轮前进）
+                motor_set_direction(1, 0);
+                motor_set_direction(2, 1);
+                delay_ms(1000);
+                // 停止
+                motor_set_direction(1, 0);
+                motor_set_direction(2, 0);
+                delay_ms(1000);
+                break;
 
-        // 显示右轮速度
-        sprintf(oled_str, "R:%.1f mm/s", Motor_Right.current_speed);
-        OLED_ShowString(0, 16, (u8 *)oled_str, 16);
+            case 3:  // 模式3：直行 + 右转
+                // 直行
+                motor_set_direction(1, 1);
+                motor_set_direction(2, 1);
+                delay_ms(2000);
+                // 右转（右轮停，左轮前进）
+                motor_set_direction(1, 1);
+                motor_set_direction(2, 0);
+                delay_ms(1000);
+                // 停止
+                motor_set_direction(1, 0);
+                motor_set_direction(2, 0);
+                delay_ms(1000);
+                break;
 
-        // 显示左轮编码器计数
-        sprintf(oled_str, "LC:%d", encoder_counter_left);
-        OLED_ShowString(0, 32, (u8 *)oled_str, 16);
+            case 4:  // 模式4：暂待使用，保持静止
+                motor_set_direction(1, 0);
+                motor_set_direction(2, 0);
+                delay_ms(1000);
+                break;
 
-        // 显示右轮编码器计数
-        sprintf(oled_str, "RC:%d", encoder_counter_right);
-        OLED_ShowString(0, 48, (u8 *)oled_str, 16);
-
-        OLED_Refresh();
-
-    //     switch(run_mode) {
-    //         case 1:  // 模式1：直行测试
-    //             motor_set_direction(1, 1);
-    //             motor_set_direction(2, 1);
-    //             delay_ms(3000);  // 直行 3 秒
-    //             // 停止
-    //             motor_set_direction(1, 0);
-    //             motor_set_direction(2, 0);
-    //             delay_ms(1000);
-    //             break;
-
-    //         case 2:  // 模式2：直行 + 左转
-    //             // 直行
-    //             motor_set_direction(1, 1);
-    //             motor_set_direction(2, 1);
-    //             delay_ms(2000);
-    //             // 左转（左轮停，右轮前进）
-    //             motor_set_direction(1, 0);
-    //             motor_set_direction(2, 1);
-    //             delay_ms(1000);
-    //             // 停止
-    //             motor_set_direction(1, 0);
-    //             motor_set_direction(2, 0);
-    //             delay_ms(1000);
-    //             break;
-
-    //         case 3:  // 模式3：直行 + 右转
-    //             // 直行
-    //             motor_set_direction(1, 1);
-    //             motor_set_direction(2, 1);
-    //             delay_ms(2000);
-    //             // 右转（右轮停，左轮前进）
-    //             motor_set_direction(1, 1);
-    //             motor_set_direction(2, 0);
-    //             delay_ms(1000);
-    //             // 停止
-    //             motor_set_direction(1, 0);
-    //             motor_set_direction(2, 0);
-    //             delay_ms(1000);
-    //             break;
-
-    //         case 4:  // 模式4：暂待使用，保持静止
-    //             motor_set_direction(1, 0);
-    //             motor_set_direction(2, 0);
-    //             delay_ms(1000);
-    //             break;
-
-    //         default:
-    //             // 异常情况，停止
-    //             motor_set_direction(1, 0);
-    //             motor_set_direction(2, 0);
-    //             delay_ms(1000);
-    //             break;
-    //     }
-
-
-        
+            default:
+                // 异常情况，停止
+                motor_set_direction(1, 0);
+                motor_set_direction(2, 0);
+                delay_ms(1000);
+                break;
+        }
         
         
         
