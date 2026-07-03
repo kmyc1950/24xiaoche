@@ -39,7 +39,6 @@
 #include "motor.h"
 
 int status = 0;
-extern float target_speed_1;
 
 int main(void)
 {
@@ -49,22 +48,43 @@ int main(void)
     OLED_DisplayTurn(0);//0正常显示 1 屏幕翻转显示
     OLED_Clear();
     // NVIC_EnableIRQ(PRINT_INST_INT_IRQN);
+
+    // 使能GPIOA中断（按键KEY1和左电机编码器AA共享此中断）
+    NVIC_EnableIRQ(DC_MOTOR_INT_IRQN);  // 等价于 GPIOA_INT_IRQn
     NVIC_EnableIRQ(KEY_INT_IRQN);
-    NVIC_EnableIRQ(DC_MOTOR_INT_IRQN);
     DL_ADC12_enableConversions(xuanniu_INST);
-    DL_Timer_startCounter(SERVO_INST);
     DL_Timer_setCaptureCompareValue(SERVO_INST, 50, GPIO_SERVO_C1_IDX);
-    motor_init(1);
-    // motor_set_duty(1, 2000);
-    target_speed_1 = 300;
+    DL_Timer_startCounter(SERVO_INST);
+
+    // ===== 双轮电机初始化 =====
+    motor_init(1);  // 初始化左轮
+    motor_init(2);  // 初始化右轮
+
+    // 启动PID定时器（50ms周期，自动执行PI闭环控制）
+    DL_Timer_startCounter(MOTOR_PID_INST);
+    NVIC_EnableIRQ(MOTOR_PID_INST_INT_IRQN);
+
+    // ===== 设置双轮目标速度 =====
+    // 目标速度单位：mm/s
+    Motor_Left.target_speed = 300.0f;   // 左轮目标速度 300mm/s
+    Motor_Right.target_speed = 300.0f;  // 右轮目标速度 300mm/s
     
 
     while (1) {
+        // PI闭环控制在定时器中断中自动执行，主循环可用于其他任务
+
         delay_ms(1000);
-        motor_set_direction(1, 1);
-        delay_ms(1000);
-        motor_set_direction(1, 1);
-        
+
+        // 示例：动态调整目标速度
+        // Motor_Left.target_speed = 400.0f;
+        // Motor_Right.target_speed = 350.0f;
+
+        // 示例：显示当前速度到OLED
+        char oled_str[50];
+        sprintf(oled_str, "L:%.0f R:%.0f", Motor_Left.current_speed, Motor_Right.current_speed);
+        OLED_ShowString(0, 0, (u8 *)oled_str, 16);
+        OLED_Refresh();
+
 
         
         

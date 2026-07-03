@@ -87,18 +87,8 @@ uint8_t Key_Scan_Multi_Click(void)
     return 0;  // 默认返回
 }
 
-void GROUP1_IRQHandler()
-{
-    switch (DL_GPIO_getPendingInterrupt(KEY_PORT))
-    {
-    case KEY_KEY1_IIDX:
-        /* code */
-        status = (status + 1) % 3;
-        break;
-    default:
-        break;
-    }
-}
+// GROUP1_IRQHandler 已移到 motor.c 中，因为按键和编码器共享 GPIOA 中断
+// 按键中断处理逻辑在 motor.c 的 GROUP1_IRQHandler 中调用
 
 
 
