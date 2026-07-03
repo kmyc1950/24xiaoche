@@ -81,6 +81,7 @@ int main(void)
             {
                 // 调用专职直行巡线控制函数
                 Huidu_Follow_Straight();
+                delay_ms(1000);  // 延时1秒，给用户切换模式的时间
 
                 // OLED 显示
                 char oled_str[64];
@@ -104,23 +105,23 @@ int main(void)
 
                 OLED_Refresh();
 
-                // 延时7ms，与底层速度环周期同步
-                delay_ms(7);
+                // 延时10ms，与底层速度环周期同步
+                delay_ms(10);
             }
             break;
 
             // ========== 模式2：专职左转巡线 ==========
             case 2:
             {
+                // 第1行：模式标识
+                OLED_ShowString(0, 0, (u8 *)"M2:LEFT TURN", 16);
+                delay_ms(1000);  // 延时1秒，给用户切换模式的时间
                 // 调用专职左转巡线控制函数
                 Huidu_Follow_LeftTurn();
 
                 // OLED 显示
                 char oled_str[64];
 
-                // 第1行：模式标识
-                OLED_ShowString(0, 0, (u8 *)"M2:LEFT TURN", 16);
-
                 // 第2行：左轮目标速度
                 sprintf(oled_str, "LTar:%.0f mm/s", Motor_Left.target_speed);
                 OLED_ShowString(0, 16, (u8 *)oled_str, 16);
@@ -137,23 +138,24 @@ int main(void)
 
                 OLED_Refresh();
 
-                // 延时7ms，与底层速度环周期同步
-                delay_ms(7);
+                // 延时10ms，与底层速度环周期同步
+                delay_ms(10);
             }
             break;
 
             // ========== 模式3：专职右转巡线 ==========
             case 3:
             {
+                // 第1行：模式标识
+                OLED_ShowString(0, 0, (u8 *)"M3:RIGHT TURN", 16);
+                delay_ms(1000);  // 延时1秒，给用户切换模式的时间
                 // 调用专职右转巡线控制函数
                 Huidu_Follow_RightTurn();
 
                 // OLED 显示
                 char oled_str[64];
 
-                // 第1行：模式标识
-                OLED_ShowString(0, 0, (u8 *)"M3:RIGHT TURN", 16);
-
+                
                 // 第2行：左轮目标速度
                 sprintf(oled_str, "LTar:%.0f mm/s", Motor_Left.target_speed);
                 OLED_ShowString(0, 16, (u8 *)oled_str, 16);
@@ -170,36 +172,38 @@ int main(void)
 
                 OLED_Refresh();
 
-                // 延时7ms，与底层速度环周期同步
-                delay_ms(7);
+                // 延时10ms，与底层速度环周期同步
+                delay_ms(10);
             }
             break;
 
             // ========== 模式4：调试模式（显示传感器原始数据）==========
-            case 4:
+            // case 4:
 
-                // OLED 显示
-                char oled_str[64];
-                OLED_ShowString(0, 0, (u8 *)"M3:TURN TEST", 16);
+            //     // OLED 显示
+            //     char oled_str[64];
+            //     OLED_ShowString(0, 0, (u8 *)"M3:TURN TEST", 16);
 
-                sprintf(oled_str, "LT:%.0f->%.0f",
-                        Motor_Left.target_speed,
-                        Motor_Left.current_speed);
-                OLED_ShowString(0, 16, (u8 *)oled_str, 16);
+            //     sprintf(oled_str, "LT:%.0f->%.0f",
+            //             Motor_Left.target_speed,
+            //             Motor_Left.current_speed);
+            //     OLED_ShowString(0, 16, (u8 *)oled_str, 16);
 
-                sprintf(oled_str, "RT:%.0f->%.0f",
-                        Motor_Right.target_speed,
-                        Motor_Right.current_speed);
-                OLED_ShowString(0, 32, (u8 *)oled_str, 16);
+            //     sprintf(oled_str, "RT:%.0f->%.0f",
+            //             Motor_Right.target_speed,
+            //             Motor_Right.current_speed);
+            //     OLED_ShowString(0, 32, (u8 *)oled_str, 16);
 
-                OLED_Refresh();
-                delay_ms(100);
-            }
-            break;
+            //     OLED_Refresh();
+            //     delay_ms(100);
+            // }
+            // break;
 
             // ========== 模式4：调试模式（显示传感器原始数据）==========
             case 4:
             {
+                 OLED_ShowString(0, 16, (u8 *)oled_str, 16);
+                 delay_ms(1000);
                 // 停止电机
                 Motor_Left.target_speed = 0.0f;
                 Motor_Right.target_speed = 0.0f;
@@ -209,14 +213,14 @@ int main(void)
                 float error = Huidu_Get_Error();
 
                 char oled_str[64];
-                OLED_ShowString(0, 0, (u8 *)"M4:DEBUG", 16);
+                
 
                 // 二进制显示
                 sprintf(oled_str, "Bin:");
                 for (int8_t i = 7; i >= 0; i--) {
                     strcat(oled_str, (sensor_raw & (1 << i)) ? "1" : "0");
                 }
-                OLED_ShowString(0, 16, (u8 *)oled_str, 16);
+               
 
                 // 十六进制显示
                 sprintf(oled_str, "Hex:0x%02X", sensor_raw);

@@ -5,23 +5,23 @@
 
 // ========== 直行巡线参数 ==========
 #define SPEED_BASE_STR          250.0f  // 直行基准速度（左右轮相同，高速）
-#define KP_STR                  8.0f    // 直行比例系数（小，防画龙）
+#define KP_STR                  2.0f    // 直行比例系数（小，防画龙）
 #define KI_STR                  0.0f    // 直行积分系数（一般不用）
-#define KD_STR                  5.0f    // 直行微分系数
+#define KD_STR                  1.0f    // 直行微分系数
 
 // ========== 左转巡线参数 ==========
-#define SPEED_L_BASE_LEFT       150.0f  // 左转时左轮基准速度（内侧，慢）
+#define SPEED_L_BASE_LEFT       200.0f  // 左转时左轮基准速度（内侧，慢）
 #define SPEED_L_BASE_RIGHT      250.0f  // 左转时右轮基准速度（外侧，快）
-#define KP_LEFT                 8.0f   // 左转比例系数（大，快速响应）
-#define KI_LEFT                 0.5f    // 左转积分系数
-#define KD_LEFT                 6.0f    // 左转微分系数
+#define KP_LEFT                 10.0f   // 左转比例系数（大，快速响应）
+#define KI_LEFT                 0.2f    // 左转积分系数
+#define KD_LEFT                 12.0f    // 左转微分系数
 
 // ========== 右转巡线参数 ==========
 #define SPEED_R_BASE_LEFT       250.0f  // 右转时左轮基准速度（外侧，快）
-#define SPEED_R_BASE_RIGHT      150.0f  // 右转时右轮基准速度（内侧，慢）
-#define KP_RIGHT                8.0f   // 右转比例系数（大，快速响应）
-#define KI_RIGHT                0.5f    // 右转积分系数
-#define KD_RIGHT                6.0f    // 右转微分系数
+#define SPEED_R_BASE_RIGHT      200.0f  // 右转时右轮基准速度（内侧，慢）
+#define KP_RIGHT                10.0f   // 右转比例系数（大，快速响应）
+#define KI_RIGHT                0.2f    // 右转积分系数
+#define KD_RIGHT                12.0f    // 右转微分系数
 
 // ========== 积分限幅（防止积分饱和）==========
 #define INTEGRAL_MAX            100.0f  // 积分项上限
