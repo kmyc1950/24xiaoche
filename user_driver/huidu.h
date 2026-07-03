@@ -78,19 +78,41 @@ float Huidu_Get_Last_Error(void);
 uint8_t Huidu_Is_Lost(void);
 
 /**
- * @brief 自动巡线控制任务（基于位置式PD算法）
+ * @brief 自动巡线控制任务（基于分段状态机 + PID算法）
  *
- * 功能：
- * - 读取灰度传感器误差
- * - 使用PD算法计算转向控制量
- * - 更新左右轮目标速度实现差速转向
+ * ========== 控制策略 ==========
+ * 采用分段状态机控制，根据误差值自动切换三种状态：
+ *
+ * 1. 直行状态（|error| <= 1.0）
+ *    - 左右轮高速（250 mm/s）
+ *    - 小增益PID（Kp=8, Ki=0, Kd=5），追求稳定不画龙
+ *
+ * 2. 左转状态（error < -1.0，黑线在左）
+ *    - 左轮慢（150 mm/s），右轮快（250 mm/s），形成物理差速
+ *    - 大增益PID（Kp=20, Ki=0.5, Kd=8），快速响应
+ *
+ * 3. 右转状态（error > 1.0，黑线在右）
+ *    - 左轮快（250 mm/s），右轮慢（150 mm/s），形成物理差速
+ *    - 大增益PID（Kp=20, Ki=0.5, Kd=8），快速响应
+ *
+ * ========== 参数调整 ==========
+ * 所有参数定义在 huidu.c 文件开头，包括：
+ * - ERROR_THRESHOLD_STRAIGHT：直行阈值（默认1.0）
+ * - STRAIGHT_BASE_SPEED_LEFT/RIGHT：直行基准速度
+ * - STRAIGHT_KP/KI/KD：直行PID参数
+ * - LEFT_TURN_BASE_SPEED_LEFT/RIGHT：左转基准速度
+ * - LEFT_TURN_KP/KI/KD：左转PID参数
+ * - RIGHT_TURN_BASE_SPEED_LEFT/RIGHT：右转基准速度
+ * - RIGHT_TURN_KP/KI/KD：右转PID参数
+ * - INTEGRAL_MAX/MIN：积分限幅
  *
  * 使用方法：
- * 在主循环中以一定周期（如10ms~50ms）调用此函数
+ * 在主循环中以7ms周期调用此函数，与底层速度环同步
  *
  * 注意：
  * - 调用前需确保电机PI控制已启动（TIMA0定时器中断）
  * - 调用前需确保左右轮电机已初始化
+ * - 保留了丢线记忆功能（error从Huidu_Get_Error()获取）
  */
 void Huidu_LineFollow_Task(void);
 
@@ -99,7 +121,7 @@ void Huidu_LineFollow_Task(void);
  *
  * 功能：
  * - 将左右轮目标速度设为0
- * - 重置PD控制器状态
+ * - 重置PID控制器状态（包括积分项）
  */
 void Huidu_LineFollow_Stop(void);
 
