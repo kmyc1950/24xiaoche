@@ -76,74 +76,107 @@ int main(void)
             }
             break;
 
-            // ========== 模式1：自动巡线 ==========
+            // ========== 模式1：专职直行巡线 ==========
             case 1:
             {
-                // 调用巡线控制函数
-                Huidu_LineFollow_Task();
-
-                // 读取当前状态用于OLED显示
-                uint8_t sensor_raw = Huidu_Read_Raw();
-                float error = Huidu_Get_Last_Error();
-                uint8_t is_lost = Huidu_Is_Lost();
+                // 调用专职直行巡线控制函数
+                Huidu_Follow_Straight();
 
                 // OLED 显示
                 char oled_str[64];
 
-                // 第1行：模式和传感器状态
-                sprintf(oled_str, "M1:LINE 0x%02X", sensor_raw);
-                OLED_ShowString(0, 0, (u8 *)oled_str, 16);
+                // 第1行：模式标识
+                OLED_ShowString(0, 0, (u8 *)"M1:STRAIGHT", 16);
 
-                // 第2行：位置误差
-                sprintf(oled_str, "Err:%+.1f %s", error, is_lost ? "LOST" : "OK");
+                // 第2行：左轮目标速度
+                sprintf(oled_str, "LTar:%.0f mm/s", Motor_Left.target_speed);
                 OLED_ShowString(0, 16, (u8 *)oled_str, 16);
 
-                // 第3行：左轮目标速度
-                sprintf(oled_str, "L:%.0f mm/s", Motor_Left.target_speed);
+                // 第3行：右轮目标速度
+                sprintf(oled_str, "RTar:%.0f mm/s", Motor_Right.target_speed);
                 OLED_ShowString(0, 32, (u8 *)oled_str, 16);
 
-                // 第4行：右轮目标速度
-                sprintf(oled_str, "R:%.0f mm/s", Motor_Right.target_speed);
+                // 第4行：实际速度
+                sprintf(oled_str, "LC:%.0f RC:%.0f",
+                        Motor_Left.current_speed,
+                        Motor_Right.current_speed);
                 OLED_ShowString(0, 48, (u8 *)oled_str, 16);
 
                 OLED_Refresh();
 
-                // 延时10ms后继续下一次巡线控制
-                delay_ms(10);
+                // 延时7ms，与底层速度环周期同步
+                delay_ms(7);
             }
             break;
 
-            // ========== 模式2：直行测试 ==========
+            // ========== 模式2：专职左转巡线 ==========
             case 2:
             {
-                // 固定速度直行（测试电机和编码器）
-                Motor_Left.target_speed = 300.0f;
-                Motor_Right.target_speed = 300.0f;
+                // 调用专职左转巡线控制函数
+                Huidu_Follow_LeftTurn();
 
                 // OLED 显示
                 char oled_str[64];
-                OLED_ShowString(0, 0, (u8 *)"M2:STRAIGHT", 16);
 
-                sprintf(oled_str, "L:%.1f mm/s", Motor_Left.current_speed);
+                // 第1行：模式标识
+                OLED_ShowString(0, 0, (u8 *)"M2:LEFT TURN", 16);
+
+                // 第2行：左轮目标速度
+                sprintf(oled_str, "LTar:%.0f mm/s", Motor_Left.target_speed);
                 OLED_ShowString(0, 16, (u8 *)oled_str, 16);
 
-                sprintf(oled_str, "R:%.1f mm/s", Motor_Right.current_speed);
+                // 第3行：右轮目标速度
+                sprintf(oled_str, "RTar:%.0f mm/s", Motor_Right.target_speed);
                 OLED_ShowString(0, 32, (u8 *)oled_str, 16);
 
-                sprintf(oled_str, "LC:%d RC:%d", encoder_counter_left, encoder_counter_right);
+                // 第4行：实际速度
+                sprintf(oled_str, "LC:%.0f RC:%.0f",
+                        Motor_Left.current_speed,
+                        Motor_Right.current_speed);
                 OLED_ShowString(0, 48, (u8 *)oled_str, 16);
 
                 OLED_Refresh();
-                delay_ms(100);
+
+                // 延时7ms，与底层速度环周期同步
+                delay_ms(7);
             }
             break;
 
-            // ========== 模式3：转弯测试 ==========
+            // ========== 模式3：专职右转巡线 ==========
             case 3:
             {
-                // 左转测试：左轮慢，右轮快
-                Motor_Left.target_speed = 200.0f;
-                Motor_Right.target_speed = 400.0f;
+                // 调用专职右转巡线控制函数
+                Huidu_Follow_RightTurn();
+
+                // OLED 显示
+                char oled_str[64];
+
+                // 第1行：模式标识
+                OLED_ShowString(0, 0, (u8 *)"M3:RIGHT TURN", 16);
+
+                // 第2行：左轮目标速度
+                sprintf(oled_str, "LTar:%.0f mm/s", Motor_Left.target_speed);
+                OLED_ShowString(0, 16, (u8 *)oled_str, 16);
+
+                // 第3行：右轮目标速度
+                sprintf(oled_str, "RTar:%.0f mm/s", Motor_Right.target_speed);
+                OLED_ShowString(0, 32, (u8 *)oled_str, 16);
+
+                // 第4行：实际速度
+                sprintf(oled_str, "LC:%.0f RC:%.0f",
+                        Motor_Left.current_speed,
+                        Motor_Right.current_speed);
+                OLED_ShowString(0, 48, (u8 *)oled_str, 16);
+
+                OLED_Refresh();
+
+                // 延时7ms，与底层速度环周期同步
+                delay_ms(7);
+            }
+            break;
+
+            // ========== 模式4：调试模式（显示传感器原始数据）==========
+            case 4:
 
                 // OLED 显示
                 char oled_str[64];

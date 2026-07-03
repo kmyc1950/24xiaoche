@@ -78,43 +78,71 @@ float Huidu_Get_Last_Error(void);
 uint8_t Huidu_Is_Lost(void);
 
 /**
- * @brief 自动巡线控制任务（基于分段状态机 + PID算法）
+ * @brief 专职直行巡线控制函数
  *
- * ========== 控制策略 ==========
- * 采用分段状态机控制，根据误差值自动切换三种状态：
+ * 策略：
+ * - 左右轮使用相同的高速基准速度（SPEED_BASE_STR = 250mm/s）
+ * - 使用小增益PID参数（KP_STR=8.0, KI_STR=0, KD_STR=5.0）
+ * - 追求稳定不画龙
  *
- * 1. 直行状态（|error| <= 1.0）
- *    - 左右轮高速（250 mm/s）
- *    - 小增益PID（Kp=8, Ki=0, Kd=5），追求稳定不画龙
+ * 适用场景：
+ * - 长直道赛道段
+ * - 需要高速稳定通过的区域
  *
- * 2. 左转状态（error < -1.0，黑线在左）
- *    - 左轮慢（150 mm/s），右轮快（250 mm/s），形成物理差速
- *    - 大增益PID（Kp=20, Ki=0.5, Kd=8），快速响应
- *
- * 3. 右转状态（error > 1.0，黑线在右）
- *    - 左轮快（250 mm/s），右轮慢（150 mm/s），形成物理差速
- *    - 大增益PID（Kp=20, Ki=0.5, Kd=8），快速响应
- *
- * ========== 参数调整 ==========
- * 所有参数定义在 huidu.c 文件开头，包括：
- * - ERROR_THRESHOLD_STRAIGHT：直行阈值（默认1.0）
- * - STRAIGHT_BASE_SPEED_LEFT/RIGHT：直行基准速度
- * - STRAIGHT_KP/KI/KD：直行PID参数
- * - LEFT_TURN_BASE_SPEED_LEFT/RIGHT：左转基准速度
- * - LEFT_TURN_KP/KI/KD：左转PID参数
- * - RIGHT_TURN_BASE_SPEED_LEFT/RIGHT：右转基准速度
- * - RIGHT_TURN_KP/KI/KD：右转PID参数
- * - INTEGRAL_MAX/MIN：积分限幅
+ * 参数调整（huidu.c开头）：
+ * - SPEED_BASE_STR：直行基准速度
+ * - KP_STR, KI_STR, KD_STR：直行PID参数
  *
  * 使用方法：
- * 在主循环中以7ms周期调用此函数，与底层速度环同步
- *
- * 注意：
- * - 调用前需确保电机PI控制已启动（TIMA0定时器中断）
- * - 调用前需确保左右轮电机已初始化
- * - 保留了丢线记忆功能（error从Huidu_Get_Error()获取）
+ * 在主循环中以7ms周期调用，专门用于直线赛道
  */
-void Huidu_LineFollow_Task(void);
+void Huidu_Follow_Straight(void);
+
+/**
+ * @brief 专职左转巡线控制函数
+ *
+ * 策略：
+ * - 左轮（内侧）基准速度较低（SPEED_L_BASE_LEFT = 150mm/s）
+ * - 右轮（外侧）基准速度较高（SPEED_L_BASE_RIGHT = 250mm/s）
+ * - 形成物理差速基础（100mm/s）
+ * - 使用大增益PID参数（KP_LEFT=20.0, KI_LEFT=0.5, KD_LEFT=8.0）
+ * - 快速响应，猛狠左转
+ *
+ * 适用场景：
+ * - 左弯道赛道段
+ * - 需要快速左转的区域
+ *
+ * 参数调整（huidu.c开头）：
+ * - SPEED_L_BASE_LEFT, SPEED_L_BASE_RIGHT：左转基准速度
+ * - KP_LEFT, KI_LEFT, KD_LEFT：左转PID参数
+ *
+ * 使用方法：
+ * 在主循环中以7ms周期调用，专门用于左转赛道
+ */
+void Huidu_Follow_LeftTurn(void);
+
+/**
+ * @brief 专职右转巡线控制函数
+ *
+ * 策略：
+ * - 左轮（外侧）基准速度较高（SPEED_R_BASE_LEFT = 250mm/s）
+ * - 右轮（内侧）基准速度较低（SPEED_R_BASE_RIGHT = 150mm/s）
+ * - 形成物理差速基础（100mm/s）
+ * - 使用大增益PID参数（KP_RIGHT=20.0, KI_RIGHT=0.5, KD_RIGHT=8.0）
+ * - 快速响应，猛狠右转
+ *
+ * 适用场景：
+ * - 右弯道赛道段
+ * - 需要快速右转的区域
+ *
+ * 参数调整（huidu.c开头）：
+ * - SPEED_R_BASE_LEFT, SPEED_R_BASE_RIGHT：右转基准速度
+ * - KP_RIGHT, KI_RIGHT, KD_RIGHT：右转PID参数
+ *
+ * 使用方法：
+ * 在主循环中以7ms周期调用，专门用于右转赛道
+ */
+void Huidu_Follow_RightTurn(void);
 
 /**
  * @brief 停止巡线（停止电机）
