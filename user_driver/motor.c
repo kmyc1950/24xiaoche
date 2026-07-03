@@ -150,7 +150,7 @@ void motor_set_direction(uint8_t motor_id, uint8_t direction)
 void calculate_speed(uint8_t motor_id)
 {
     if (motor_id == 1) {
-        // 左轮速度计算（中断方式）
+        // 左轮速度计算（GPIO中断方式）
         // 速度(mm/s) = 脉冲增量 / 编码器每转脉冲数 / 采样时间(s) × 车轮周长(mm)
         Motor_Left.current_speed = (float)encoder_counter_left * WHEEL_CIRCUMFERENCE_MM / ENCODER_PPR / PID_SAMPLE_TIME_S;
 
@@ -158,27 +158,7 @@ void calculate_speed(uint8_t motor_id)
         encoder_counter_left = 0;
 
     } else if (motor_id == 2) {
-        // 右轮速度计算（轮询方式 - 临时方案）
-        // TODO: 需要在 SysConfig 中配置 DC_MOTOR_RIGHT_BA 为 GPIO 中断
-
-        // 轮询读取右轮编码器BA引脚状态
-        static uint8_t last_state_right_ba = 0;
-        uint32_t current_state_ba = DL_GPIO_readPins(DC_MOTOR_RIGHT_PORT, DC_MOTOR_RIGHT_BA_PIN);
-
-        // 检测上升沿
-        if (current_state_ba != 0 && last_state_right_ba == 0) {
-            // BA 上升沿，读取 BB 相判断方向
-            uint32_t pin_bb = DL_GPIO_readPins(DC_MOTOR_RIGHT_PORT, DC_MOTOR_RIGHT_BB_PIN);
-
-            if (pin_bb == 0) {
-                encoder_counter_right++;  // 正转
-            } else {
-                encoder_counter_right--;  // 反转
-            }
-        }
-        last_state_right_ba = (current_state_ba != 0) ? 1 : 0;
-
-        // 计算速度
+        // 右轮速度计算（GPIO中断方式）
         Motor_Right.current_speed = (float)encoder_counter_right * WHEEL_CIRCUMFERENCE_MM / ENCODER_PPR / PID_SAMPLE_TIME_S;
 
         // 清零编码器计数器
@@ -329,23 +309,32 @@ void TIMA0_IRQHandler(void)
 // ===================== GPIO中断服务函数（编码器脉冲计数 + 按键处理）=====================
 
 /**
- * @brief GPIOA中断服务函数（处理编码器和按键中断）
+ * @brief GROUP1中断服务函数（处理GPIOA和GPIOB的编码器+按键中断）
  *
  * 共享中断源：
- * - KEY_KEY1_IIDX：按键中断（保留原有逻辑）
- * - DC_MOTOR_LEFT_AA_IIDX：左轮编码器A相中断
+ * - KEY_KEY1_IIDX：按键中断
+ * - DC_MOTOR_LEFT_AA_IIDX：左轮编码器A相中断（GPIOA.9）
+ * - DC_MOTOR_RIGHT_BA_IIDX：右轮编码器A相中断（GPIOB.7）
  *
  * 编码器计数策略：
- * 本实现使用单边沿计数（只计A相上升沿）
- * 可通过B相状态判断旋转方向：
+ * 使用单边沿计数（只计A相上升沿）
+ * 通过B相状态判断旋转方向：
  * - A上升沿时，B=0 → 正转，计数+1
  * - A上升沿时，B=1 → 反转，计数-1
+ *
+ * 中断标志位清除：
+ * DL_GPIO_getPendingInterrupt() 会自动读取并清除中断标志位
  */
 void GROUP1_IRQHandler(void)
 {
-    uint32_t gpio_iidx = DL_GPIO_getPendingInterrupt(DC_MOTOR_LEFT_AA_PORT);
+    // 1. 读取GPIOA的中断标志位
+    uint32_t gpioa_iidx = DL_GPIO_getPendingInterrupt(DC_MOTOR_LEFT_AA_PORT);
 
-    switch (gpio_iidx)
+    // 2. 读取GPIOB的中断标志位
+    uint32_t gpiob_iidx = DL_GPIO_getPendingInterrupt(DC_MOTOR_RIGHT_PORT);
+
+    // 3. 处理GPIOA中断（左轮编码器 + 按键）
+    switch (gpioa_iidx)
     {
     case DC_MOTOR_LEFT_AA_IIDX:
         // 左轮编码器A相中断（上升沿）
@@ -366,6 +355,27 @@ void GROUP1_IRQHandler(void)
         {
             extern int run_mode;
             run_mode = (run_mode + 1) % 5;  // 循环切换 0~4 五种模式
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    // 4. 处理GPIOB中断（右轮编码器）
+    switch (gpiob_iidx)
+    {
+    case DC_MOTOR_RIGHT_BA_IIDX:
+        // 右轮编码器A相中断（上升沿）
+        {
+            // 读取B相状态判断方向
+            uint32_t pin_bb = DL_GPIO_readPins(DC_MOTOR_RIGHT_PORT, DC_MOTOR_RIGHT_BB_PIN);
+
+            if (pin_bb == 0) {
+                encoder_counter_right++;  // 正转
+            } else {
+                encoder_counter_right--;  // 反转
+            }
         }
         break;
 

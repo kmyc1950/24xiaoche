@@ -101,9 +101,11 @@ GPIO4.associatedPins[2].$name            = "BA";
 GPIO4.associatedPins[2].direction        = "INPUT";
 GPIO4.associatedPins[2].polarity         = "RISE";
 GPIO4.associatedPins[2].internalResistor = "PULL_DOWN";
+GPIO4.associatedPins[2].interruptEn      = true;
 GPIO4.associatedPins[2].pin.$assign      = "PB7";
 GPIO4.associatedPins[3].$name            = "BB";
 GPIO4.associatedPins[3].internalResistor = "PULL_DOWN";
+GPIO4.associatedPins[3].direction        = "INPUT";
 GPIO4.associatedPins[3].pin.$assign      = "PB6";
 
 I2C1.$name                             = "OLED";

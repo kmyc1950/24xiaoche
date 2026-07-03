@@ -93,60 +93,60 @@ int main(void)
 
         OLED_Refresh();
 
-        switch(run_mode) {
-            case 1:  // 模式1：直行测试
-                motor_set_direction(1, 1);
-                motor_set_direction(2, 1);
-                delay_ms(3000);  // 直行 3 秒
-                // 停止
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                break;
+    //     switch(run_mode) {
+    //         case 1:  // 模式1：直行测试
+    //             motor_set_direction(1, 1);
+    //             motor_set_direction(2, 1);
+    //             delay_ms(3000);  // 直行 3 秒
+    //             // 停止
+    //             motor_set_direction(1, 0);
+    //             motor_set_direction(2, 0);
+    //             delay_ms(1000);
+    //             break;
 
-            case 2:  // 模式2：直行 + 左转
-                // 直行
-                motor_set_direction(1, 1);
-                motor_set_direction(2, 1);
-                delay_ms(2000);
-                // 左转（左轮停，右轮前进）
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 1);
-                delay_ms(1000);
-                // 停止
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                break;
+    //         case 2:  // 模式2：直行 + 左转
+    //             // 直行
+    //             motor_set_direction(1, 1);
+    //             motor_set_direction(2, 1);
+    //             delay_ms(2000);
+    //             // 左转（左轮停，右轮前进）
+    //             motor_set_direction(1, 0);
+    //             motor_set_direction(2, 1);
+    //             delay_ms(1000);
+    //             // 停止
+    //             motor_set_direction(1, 0);
+    //             motor_set_direction(2, 0);
+    //             delay_ms(1000);
+    //             break;
 
-            case 3:  // 模式3：直行 + 右转
-                // 直行
-                motor_set_direction(1, 1);
-                motor_set_direction(2, 1);
-                delay_ms(2000);
-                // 右转（右轮停，左轮前进）
-                motor_set_direction(1, 1);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                // 停止
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                break;
+    //         case 3:  // 模式3：直行 + 右转
+    //             // 直行
+    //             motor_set_direction(1, 1);
+    //             motor_set_direction(2, 1);
+    //             delay_ms(2000);
+    //             // 右转（右轮停，左轮前进）
+    //             motor_set_direction(1, 1);
+    //             motor_set_direction(2, 0);
+    //             delay_ms(1000);
+    //             // 停止
+    //             motor_set_direction(1, 0);
+    //             motor_set_direction(2, 0);
+    //             delay_ms(1000);
+    //             break;
 
-            case 4:  // 模式4：暂待使用，保持静止
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                break;
+    //         case 4:  // 模式4：暂待使用，保持静止
+    //             motor_set_direction(1, 0);
+    //             motor_set_direction(2, 0);
+    //             delay_ms(1000);
+    //             break;
 
-            default:
-                // 异常情况，停止
-                motor_set_direction(1, 0);
-                motor_set_direction(2, 0);
-                delay_ms(1000);
-                break;
-        }
+    //         default:
+    //             // 异常情况，停止
+    //             motor_set_direction(1, 0);
+    //             motor_set_direction(2, 0);
+    //             delay_ms(1000);
+    //             break;
+    //     }
 
 
         
