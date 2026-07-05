@@ -1,0 +1,16 @@
+name: My CCS AI Config
+version: 1.0.0
+schema: v1
+
+# 定义你可以使用的模型
+models:
+  - name: DeepSeek Pro
+    provider: openai
+    model: deepseek-v4-pro
+    apiBase: https://www.micuapi.ai/v1
+    apiKey: sk-V1AWswUPGgzJkrFJMVs6WmTM6rbTc9oAO0ROtO6Zg8s1VcZN
+    roles:
+      - chat
+      - edit
+      - apply
+      - autocomplete

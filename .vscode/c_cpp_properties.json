@@ -9,7 +9,7 @@
                 "${workspaceFolder}",
                 "${workspaceFolder}/Debug",
                 "${workspaceFolder}/user_driver",
-                "${workspaceFolder}/user_driver/mpu6050"
+                "${workspaceFolder}/user_driver/wit"
 
 
             ],

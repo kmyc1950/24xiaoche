@@ -13,19 +13,19 @@ void UART_send_string(UART_Regs *uart, const char *str)
     }
 }
 
-void PRINT_INST_IRQHandler()
-{
-    switch (DL_UART_getPendingInterrupt(PRINT_INST))
-    {
-    case DL_UART_IIDX_RX:
-        {   
-            uint8_t rec = DL_UART_receiveData(PRINT_INST);
-            UART_send_char(PRINT_INST, rec);
-            break;
-        }
+// void PRINT_INST_IRQHandler()
+// {
+//     switch (DL_UART_getPendingInterrupt(PRINT_INST))
+//     {
+//     case DL_UART_IIDX_RX:
+//         {   
+//             uint8_t rec = DL_UART_receiveData(PRINT_INST);
+//             UART_send_char(PRINT_INST, rec);
+//             break;
+//         }
     
-    default:
-        break;
-    }
-}
+//     default:
+//         break;
+//     }
+// }
 

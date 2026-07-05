@@ -59,9 +59,6 @@ typedef struct {
 extern Motor_PI_TypeDef Motor_Left;   // 左轮PI控制器
 extern Motor_PI_TypeDef Motor_Right;  // 右轮PI控制器
 
-extern volatile int32_t encoder_counter_left;   // 左轮编码器计数
-extern volatile int32_t encoder_counter_right;  // 右轮编码器计数
-
 // ===================== 函数声明 =====================
 
 /**

@@ -190,20 +190,55 @@ void OLED_ShowChar(u8 x,u8 y,u8 chr,u8 size1)
 }
 
 //显示字符串
-void OLED_ShowString(u8 x,u8 y,u8 *chr,u8 size1)
+// void OLED_ShowString(u8 x,u8 y,u8 *chr,u8 size1)
+// {
+// 	while((*chr>=' ')&&(*chr<='~'))
+// 	{
+// 		OLED_ShowChar(x,y,*chr,size1);
+// 		x+=size1/2;
+// 		if(x>128-size1)  //换行
+// 		{
+// 			x=0;
+// 			y+=size1; // 修复了原代码的y+=2的bug
+// 		}
+// 		chr++;
+// 	}
+// }
+// void OLED_ShowString(uint8_t x,uint8_t y,uint8_t *chr,uint8_t sizey)
+// {
+//     uint8_t j=0;
+//     while (chr[j]!='\0')
+//     {		
+//         OLED_ShowChar(x,y,chr[j++],sizey);
+//         if(sizey==8)x+=6;
+//         else x+=sizey/2;
+//     }
+// }
+void OLED_ShowString(uint8_t x, uint8_t y, uint8_t *chr, uint8_t sizey)
 {
-	while((*chr>=' ')&&(*chr<='~'))
-	{
-		OLED_ShowChar(x,y,*chr,size1);
-		x+=size1/2;
-		if(x>128-size1)  //换行
-		{
-			x=0;
-			y+=size1; // 修复了原代码的y+=2的bug
-		}
-		chr++;
-	}
+    while (*chr != '\0') // 采用代码二的精准字符串结束判定
+    {
+        // 1. 显示当前字符
+        OLED_ShowChar(x, y, *chr, sizey);
+        
+        // 2. 采用代码二的计算方法：计算下一个字符的 X 坐标间距
+        if (sizey == 8) {
+            x += 6;        // 6x8 字体间距为 6
+        } else {
+            x += sizey / 2; // 其他字体（如 16 字体间距为 8）
+        }
+        
+        // 3. 融合代码一的自动换行逻辑
+        if (x > 128 - (sizey == 8 ? 6 : sizey / 2)) 
+        {
+            x = 0;        // 回到行首
+            y += sizey;   // 换到下一行
+        }
+        
+        chr++; // 指针后移，处理下一个字符
+    }
 }
+
 
 //m^n
 u32 OLED_Pow(u8 m,u8 n)
